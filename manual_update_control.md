@@ -21,7 +21,7 @@ The new function `update_mode()` sets the default update mode for resources. It 
 
 `k8s_resource` and `dc_resource` take an additional optional argument `update_mode` (default value: `UPDATE_AUTO`), which must be one of the above constants.
 
-UI
+## UI Changes
 * Pressing 'u' will start an update of the selected resource (including Tiltfile). (If there is a current update running, it will put it the selected resource at the front of the queue).
 * Pressing shift+'u' will do the same, unless the selected resource is using Live Update, in which case it will do an image update, not a live update.
 * Pressing spacebar will toggle Pause. While Pause is on, Tilt will not queue builds automatically. At the moment the user turns off Pause, all resources with pending file edits will be enqueued.
