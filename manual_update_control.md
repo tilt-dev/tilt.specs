@@ -5,7 +5,7 @@ Today, Tilt updates on each save. This is frustrating:
 * deploying a half-done version can break things worse, e.g. putting the database into an inconsistent state
 * Doing a git checkout is scary, because it might freak out Tilt
 * We should allow users to control when Tilt updates.
-Goals
+## Goals:
 * User can start an update (or enqueue one at the front of the queue) for any service by performing an interaction in the UI.
 * User can choose to put Tilt resources into a manual update mode.
 * User can see whether there are pending file changes by default. (If we don't do this, a user could have undeployed changes and be surprised, breaking our brand promise)
