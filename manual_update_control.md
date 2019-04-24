@@ -17,6 +17,8 @@ Today, Tilt updates on each save. This is frustrating:
 ## Non-/Future Goals
 ### stop updates once they've started
 (This would require more engine changes; we should do it at some point but it's not clear if users have builds that take long enough for this to be a big pain point)
+### Approve risky changes
+Some users (e.g. AdamB) have complained when we force-update otherwise immutable k8s objects (specifically StatefulSets). It'd be great if we could warn a user that we're trying to do a dangerous/forced update, and let them approve or ignore.
 ## Tiltfile Changes
 The new function `update_mode()` sets the default update mode for resources. It accepts one argument, which must be either of the (new) constants `UPDATE_AUTO` or `UPDATE_MANUAL`, which are singleton values that are in global scope for the Tiltfile.
 
