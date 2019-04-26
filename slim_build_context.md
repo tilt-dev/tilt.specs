@@ -39,7 +39,8 @@ a source of pain.
 ## Solution Options
 Brief descriptions here, pros/cons in the next section.
 1. Watch only an image's actual dependencies instead of its full build context.
-  1. e.g., parse each Dockerfile, find ADDs and COPYs, and only watch the files
+
+   e.g., parse each Dockerfile, find ADDs and COPYs, and only watch the files
      that get added and copied.
 2. Add a `docker_build` option `only_rebuild_on` - only files listed here will
    trigger builds, but the build still has access to the full build context, e.g.:
