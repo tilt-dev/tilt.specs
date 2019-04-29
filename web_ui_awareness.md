@@ -115,6 +115,32 @@ The changes support these use cases, which assume you already have a Tiltfile se
 
 
 &nbsp;
-## Alternatives Considered
+### MISC CHANGES
+- See pod ID and and port-forward for each resource
+- See pod status
 
-We are having internal debates about whether to deprecate the TUI, and make the Web UI work more like a default interface. For now, we are deferring this question. 
+
+&nbsp;
+## Alternatives Considered
+1. We had internal debates about whether to deprecate the TUI, and make the Web UI work more like a default interface. No decision yet.
+
+2. We talked extensively about whether errors automatically show up. DB advocated for Tilt to show you error log context, so you can fix the issue without having to navigate anywhere in the Web UI. But if we show error pop-ups, this might take your focus away from something you care about more. For now, we are addressing this use case by creating an Error Pane where errors will automatically appear.
+
+
+## Appendix: Demo Script from DB
+
+Here's Tilt.
+Each microservice is a line in the UI.
+I can select/expand a service to see its pod ID and that Tilt's port-forwarding it to localhost:9000. I can open the page in a new tab.
+
+I'm going to change a service. I can see that Tilt saw the change, and is dowing a docker build, docker push, and kubectl apply. I can see where time went in that sequence. When it's done, I can go to the webapp and reload to see my change.
+
+I can introduce a syntax error, and see Tilt build it. When it fails, I see the relevant error text, pinned on my screen until I fix it. (See #2 in Alternative Considered)
+
+If I fix the build error, but make the service die on startup, like there's a missing file. I can see the pod is in CrashLoopBackOff without any intervention.
+
+If I fix the startup error but introduce a request time error, I can see that Tilt goes green. Until I make the request, at which time I see that it restarted. The relevant logs (from just before the restart) stay surfaced. Even though the pod is back to green, Tilt makes sure I don't miss this relevant data.
+
+If I introduce an error in the Tiltfile, I see that error. The other services stay running: Tilt's smart enough not to blink them out of existence because of a momentary typo.
+
+I can update a service that has Live Update. When I hit save, I can see it doesn't create a new pod but is much faster.
