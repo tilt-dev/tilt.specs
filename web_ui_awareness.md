@@ -66,7 +66,7 @@ The changes support these use cases, which assume you already have a Tiltfile se
     - Build error
     - Runtime error (after you trigger the error)
 
-/web_ui_awareness_mock.png
+![](/web_ui_awareness_mock.png)
 
 &nbsp;
 ### STATUSBAR
