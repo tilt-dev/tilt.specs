@@ -38,11 +38,18 @@ Since this is the first pass at a standalone Web UI, we limit our focus to two c
 
 &nbsp;
 ## Non-Requirements
+
+**SURFACE MORE INFO:**
+
 Tilt has lots of potentially relevant and useful data that we don't show (or surface) in the Web UI. We need more feedback on this first pass, but we should eventually think through whether or how to add other data to our UI:
 
 - Build history for individual resources
 - The YAML Tilt read or deployed
 - The history of changes to a Pod (e.g., `kubectl get pods -w`)
+
+&nbsp;
+
+**"SMARTER" ERRORS:**
 
 We can also better explain specific types of errors, rather than let the user infer:
 
@@ -59,33 +66,36 @@ In the default interface, the **overview** panes allow you to navigate to **deta
 The changes support these use cases, which assume you already have a Tiltfile set up:
 
 1. You change code, then see a successful rebuild and deploy
-    - You see Tilt detect the change and start working (and what triggered it)
-    - You see Tilt is done (and know your service is ready to check)
+    - You see Tilt detect the change and start working
+    - You see Tilt is done
 
 2. You introduce errors, see what happened, and how to resolve them.
     - Build error
-    - Runtime error (after you trigger the error)
+    - Startup error
+    - Runtime error [1]
+
+[1] The UI shows the error once you encounter it. Ex: You load the page and see a 500 error. 
 
 ![](/web_ui_awareness_mock.png)
 
 &nbsp;
 ### STATUSBAR
-1. A single-line message gives you a sense of what Tilt is doing. Messages should be informative, but legible (i.e., if some status would only display for 1ms, show instead the parent process that displays for ~1s)
+1. Show a single-line message to give a sense of what Tilt is doing. Messages should be informative, but legible (i.e., if some status would only display for 1ms, show instead the parent process that displays for ~1s)
 
 	Example messages:
 
 	```
 	Reading Tiltfile
-	Building: fe
-	Building: fe — Building Dockerfile
-	Building: fe — Pushing Docker image 
-	Building: fe — Deploying
-	Building: vigoda 
+	Updating: fe
+	Updating: fe — Building Dockerfile
+	Updating: fe — Pushing Docker image 
+	Updating: fe — Deploying
+	Updating: vigoda 
 	...
 	```
 
 
-2. "Last Edit" updates with last detected file change.
+2. Show "Last Edit" section with last detected file change.
 
 	```
 	Last Edit: main.go (fe)
@@ -101,23 +111,25 @@ The changes support these use cases, which assume you already have a Tiltfile se
 
 &nbsp;
 ### SIDEBAR
-- Each resource item has additional information to show its status.
-	- Last deployed timestamp
-	- When building, animations to show activity
+Make each resource item have a more visible status.
+
+- Last deployed timestamp
+- When building, animations to show activity
 
 
 &nbsp;
 ### ERROR PANE
-`Sidebar > ALL > Errors`
+In `Sidebar > ALL > Errors`, show a single page with all errors.
 
 - Even if there are no errors, you can keep this pane open so you'll see errors as soon as they appear.
 - When there are no errors, you see a design that looks intentionally empty.
 
 
 &nbsp;
-### MISC CHANGES
-- See pod ID and and port-forward for each resource
-- See pod status
+### ADDITIONAL INFO
+Show info about resources. We consider pod ID and endpoints to be some of the most useful information, which helps you investigate issues using your own process. (Even `kubectl`)
+
+- Log Pane shows pod ID and and endpoints
 
 
 &nbsp;
@@ -126,7 +138,7 @@ The changes support these use cases, which assume you already have a Tiltfile se
 
 2. We talked extensively about whether errors automatically show up. DB advocated for Tilt to show you error log context, so you can fix the issue without having to navigate anywhere in the Web UI. But if we show error pop-ups, this might take your focus away from something you care about more. For now, we are addressing this use case by creating an Error Pane where errors will automatically appear.
 
-
+&nbsp;
 ## Appendix: Demo Script from DB
 
 Here's Tilt.
