@@ -1,8 +1,8 @@
 ## Context and Goals
 
-Currently, we nudge people to opt into (or out of) analytics the first time they run Tilt. This is a bad time to nudge them -- they have no reason to trust us yet, and have seen no value from Tilt that might make them willing to share their data. Moreover, to opt in or out, the user has to run a separate CLI tool, `tilt analytics`, which is an awkward extra step and takes them out of flow. 
+Currently, we prompt people to opt into (or out of) analytics the first time they run Tilt. Frustratingly, this is a blocking prompt -- the user can't continue to use Tilt until they respond. Not only does this jolt them out of flow, at this point the user has no reason to trust us yet, and has seen no value from Tilt that might make them willing to share their data. 
 
-We want to nudge users to opt in/out of analytics at a time when they have already seen some value in Tilt and might be more willing to share information with us/more invested in our ability to support them. The nudge and opt in/out process should be easy and low-friction, and take the user out of their flow with Tilt as little as possible. It should also provide adequate context to the user about our analytics (at a time when the user will _not_ be thinking about this sort of thing): what information we send, how we use it, and how we respect their privacy.
+We want to *nudge* (non-blockingly) users to opt in/out of analytics at a time when they have already seen some value in Tilt and might be more willing to share information with us/more invested in our ability to support them. The nudge and opt in/out process should be easy and low-friction, and take the user out of their flow with Tilt as little as possible. It should also provide adequate context to the user about our analytics (at a time when the user will _not_ be thinking about this sort of thing): what information we send, how we use it, and how we respect their privacy.
 
 ### Non-goals of this spec:
 * reviewing metrics we send, our messaging around analytics, our privacy policy
