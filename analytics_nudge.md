@@ -59,4 +59,20 @@ Copy TDB: either something straight-forward like "opt into analytics to help us 
 	* possible solution: send an event (anonomized) when we *ask* users about analytics; `[users asked] - [opt in events + opt out events]` will tell us if significant numbers of users are potentially not seeing the nudge.
 * the timing, wording, and placement of the nudge are all shots in the dark; ideally we'll have a little time to try them out, gather user feedback, and iterate on them before Kubecon. (If we don't get this chance before Kubecon though, we should certainly do this afterwards.)
 
+## Proposed Task Breakdown
+* Feature gating
+	* `--new-analytics` flag (to be removed later) to gate new features (alternately, can do this by reading an env variable)
+* Changes to existing analytics
+	* send event when user opts in/out (not gated)
+	* record timestamp with opt in/out in `choice.txt` (should be backwards compatible) (gated)
+* Engine changes
+	* a subscriber to determine whether user needs nudge (i.e., at least one non-`k8s_yaml` manifest is green, user has not already opted in/out), set flag on state
+	* if `state.needsNudge`, send that data along in the WebView
+* Web changes
+	* if `data.needsNudge`, display nudge copy and y/n buttons
+	* clicking y/n buttons sends request back to hud server `/analytics/opt`
+	* if get !200 from request, display "something went wrong"
+* HUD server
+	* handle requests to `analytics/opt` (i.e. call out to analytics package)
+	* if success, un-set `state.needsNudge` (...or set to `optDone` or similar so we can show the user a "thank you" message?)
 
