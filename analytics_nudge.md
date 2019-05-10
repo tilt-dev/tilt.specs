@@ -44,7 +44,7 @@ Copy TDB: either something straight-forward like "opt into analytics to help us 
 
 #### Alternatives considered
 1. nudge in the TUI.
-    * right now we are focused on developing the Web UI/not adding new features to the TUI as we figure out a long-term plan for our UIs; therefore this implementation should focus on the Web UI
+    * right now, because of our current focus on/push for the Web UI -- e.g. the fact that we auto-open the Web UI on `tilt up`, and are planning to give Kubecon demos there -- we can expect a majority of new users to spend at least some time in the Web UI, which makes it a pretty safe bet for the nudge. Conversely, we have no similar instinct that new users will spend any appreciable time in the TUI, so putting the nudge only in the TUI seems risky.
 2. have the user run the existing `tilt analytics` command
     * having to switch back to their terminal interrupts the user's flow with Tilt and makes our analytics seem extra annoying -- not to mention that it's especially weird to take a user _out_ of the Web UI when we're trying to establish its primacy 
 3. nudge in the "Alerts" pane
