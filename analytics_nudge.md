@@ -36,7 +36,7 @@ We should nudge the user in the Web UI, and allow them to select "opt-in" or "op
 
 When Tilt determines that we need to nudge the user, we'll send that information along to the Web UI (as part of the Webview json) and render an unobtrusive nudge in sidebar (area B in this image), though in the status bar (C) or in the nav bar (A, though this conflicts with Sail share info) are also possibilities. (Particularly if we nudge when the user gets their first resource up and running, seems safe to assume that we'll have space to spare in the sidebar.)
 
-![possible places in web UI to put analytics nudge](images/web-ui-where-nudge.png) 
+![possible places in Web UI to put analytics nudge](images/web-ui-where-nudge.png)
 
 The nudge will consist of some copy tbd, and buttons for "opt in" and "opt out". Clicking one of those buttons sends an HTTP request back to the HUD server, which propagates it to the relevant analytics code (which writes the user's choice to disk, as normal). (If something goes wrong with this process, we log the error and replace the buttons with a "something went wrong, try again later" message.)
 
@@ -44,7 +44,7 @@ Copy TDB: either something straight-forward like "opt into analytics to help us 
 
 #### Alternatives considered
 1. nudge in the TUI.
-    * we don't want to be adding more functionality to the TUI at this time, as we're trying to move towards the Web UI as the way of the future
+    * right now we are focused on developing the Web UI/not adding new features to the TUI as we figure out a long-term plan for our UIs; therefore this implementation should focus on the Web UI
 2. have the user run the existing `tilt analytics` command
     * having to switch back to their terminal interrupts the user's flow with Tilt and makes our analytics seem extra annoying -- not to mention that it's especially weird to take a user _out_ of the Web UI when we're trying to establish its primacy 
 3. nudge in the "Alerts" pane
@@ -54,4 +54,9 @@ Copy TDB: either something straight-forward like "opt into analytics to help us 
 
 ## Risks
 * if we mess something up technically or implement this nudge in a way that doesn't resonate with users (e.g. they don't see it, they get annoyed and hit "no", we don't provide them enough information and they hit "no" out of fear), we risk a gap in metrics. This makes it harder for us to know what's going on with our product and could negatively affect fundraising
+	* possible solution: send events (anonomized) when a user opts in/out of analytics; if these events drop off (or "opt out" spikes), we'll know we have to double check our implementation / re-evaluate our nudge.
+* because we're moving the nudge to web, anyone who uses the TUI exclusively won't be able to opt in/out of analytics. (This is less of a concern at present because the Web UI opens automatically, so new users are more likely to see and use it.)
+	* possible solution: send an event (anonomized) when we *ask* users about analytics; `[users asked] - [opt in events + opt out events]` will tell us if significant numbers of users are potentially not seeing the nudge.
 * the timing, wording, and placement of the nudge are all shots in the dark; ideally we'll have a little time to try them out, gather user feedback, and iterate on them before Kubecon. (If we don't get this chance before Kubecon though, we should certainly do this afterwards.)
+
+
