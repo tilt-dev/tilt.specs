@@ -201,8 +201,8 @@ performing. How do we expect users to debug the image?
   doing a command-line docker build should be fine; it'll just produce an image
   with some more files than were there from the Tilt build. I think for someone
   to be bitten by this, they would need to make it through all four of: 1) using
-  this feature, 2) running into problems caused by misconfigured ignore patterns,
-  3) performing a docker build outside of Tilt to diagnose those problems, 4)
-  observing it working in the non-Tilt build but not the Tilt build, 5) failing
-  to blame Tilt after observing #4. I don't see a good way to mitigate this,
-  and it seems like an acceptable risk.
+  this feature, 2) running into problems caused by misconfigured ignore
+  patterns, 3) performing a docker build outside of Tilt to diagnose those
+  problems, 4) observing it working in the non-Tilt build but not the Tilt
+  build, 5) failing to blame Tilt after observing #4. I don't see a good way to
+  mitigate this, and it seems like an acceptable risk.
