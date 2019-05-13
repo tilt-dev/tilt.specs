@@ -132,6 +132,9 @@ Brief descriptions here, pros/cons in the next section.
       but maybe we can mostly mitigate that by advertising in our docs?). An
       simpler, less flexible alternative would be `includes=[...], excludes=[...]`.
       That might be flexible enough.
+   3. We should make it clear that we're ignoring these files from a _file watching
+      perspective_, but are _not_ excluding them from the build context (i.e. they
+      can still make it into the Docker image).
 
 4. ##### Allow `docker_build`'s context param to take either the string (directory) it currently does, or a new `BuildContext` type that specifies a directory and also watch/build rules.
 
