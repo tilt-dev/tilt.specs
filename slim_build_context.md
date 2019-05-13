@@ -112,6 +112,8 @@ Brief descriptions here, pros/cons in the next section.
    3. Introduces a distinction between "files we include in the build" and
       "files we watch to trigger a build", making the user's required
       mental model a bit more complicated.
+   4. Potentially confusing when taken together with Live Update `fall_back_on` step;
+      we'll need to be extra clear about the interaction between these two concepts.
 
 3. ##### Add `docker_build` options `ignore` and/or `only`, which filter the build context.
 
