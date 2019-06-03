@@ -25,19 +25,17 @@ The new function `update_mode()` sets the default update mode for resources. It 
 `k8s_resource` and `dc_resource` take an additional optional argument `update_mode` (default value: `UPDATE_AUTO`), which must be one of the above constants.
 
 ## UI Changes
-* Pressing 'u' will start an update of the selected resource (including Tiltfile). (If there is a current update running, it will put it the selected resource at the front of the queue).
-* Pressing shift+'u' will do the same, unless the selected resource is using Live Update, in which case it will do an image update, not a live update.
-* Pressing spacebar will toggle Pause. While Pause is on, Tilt will not queue builds automatically. At the moment the user turns off Pause, all resources with pending file edits will be enqueued.
-* The "Build" column will be renamed to "Update".
-* The Update column for a Resource will show:
+* An update control to start an update of a resource (including Tiltfile). (If there is a current update running, it will put it the selected resource at the front of the queue).
+* A forceful update control will do the same, unless the selected resource is using Live Update, in which case it will do an image update, not a live update.
+* A pause control to toggle Pause. While Pause is on, Tilt will not queue builds automatically. At the moment the user turns off Pause, all resources with pending file edits will be enqueued.
+* For a resource, you'll be able to see:
   * If it's dirty. E.g., "*" if it's dirty. But also some indication that updates on each new update.. (e.g. two symbols and it switches between the two each time you save). This way the user knows Tilt is seeing the edits.
-  * Info about some update, in priority order:
-    * Current update: "Updating (1.5s)"
+  * Info about a relevant update. One resource could have both a current update and a pending update, e.g. In priority order, we'll show you:
+    * Current update: the visual indicator that it's building
     * Pending Update:
-      * If global pause: "Paused"
-      * If in queue: "Queue: N" (where N is the position in the queue)
-      * If manual: "Manual"
-    *Previous Update
+      * If global pause, a paused+dirty indicator
+      * If in queue, a queued+dirty indicator (possibly with a highlight for the next up)
+      * If manual, an indication that it's dirty and waiting for user input
 
 ## Questions left to implementation
 These are questions that we consider now, but don't think we can answer well and will leave to implementation.
