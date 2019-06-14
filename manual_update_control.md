@@ -1,59 +1,66 @@
-# Manual Update Control Spec (Proposal)
+# Manual Update Control Spec
+
 ## Background
-Today, Tilt updates on each save. This is frustrating:
-* builds are often broken, leading to alert fatigue
-* deploying a half-done version can break things worse, e.g. putting the database into an inconsistent state
-* Doing a git checkout is scary, because it might freak out Tilt
-* We should allow users to control when Tilt updates.
+Tilt updates your cluster each time you save, staying in sync without active tending. This supports our brand promise of “liveness” and speed. But users and potential customers are put off by certain negative effects:
 
-## Goals:
-* User can start an update (or enqueue one at the front of the queue) for any service by performing an interaction in the UI.
-* User can choose to put Tilt resources into a manual update mode.
-* User can see whether there are pending file changes by default. (If we don't do this, a user could have undeployed changes and be surprised, breaking our brand promise)
-* User can configure this in the Tiltfile, not the command-line, as per Tiltfile design principles
-* User can set this for all resources, or configure per-resource. (This matters for projects where some services are in a language like js that expects hot reload and other are in a service like java that has more errors builds)
-* User can also "Pause" Tilt in the UI. When Tilt is Paused, it won't start new updates automatically. User can manually initiate an update while Tilt is paused.
-* For services that use LiveUpdate, the user can start either a full build update or a live update.
-## Non-/Future Goals
-### stop updates once they've started
-(This would require more engine changes; we should do it at some point but it's not clear if users have builds that take long enough for this to be a big pain point)
-### Approve risky changes
-Some users (e.g. AdamB) have complained when we force-update otherwise immutable k8s objects (specifically StatefulSets). It'd be great if we could warn a user that we're trying to do a dangerous/forced update, and let them approve or ignore.
-## Tiltfile Changes
-The new function `update_mode()` sets the default update mode for resources. It accepts one argument, which must be either of the (new) constants `UPDATE_AUTO` or `UPDATE_MANUAL`, which are singleton values that are in global scope for the Tiltfile.
+- WIP builds are often broken → alert fatigue 
+- Deploying a half-done version → problems. e.g., DB gets into an inconsistent state
 
-`k8s_resource` and `dc_resource` take an additional optional argument `update_mode` (default value: `UPDATE_AUTO`), which must be one of the above constants.
+## Goals
+- You can set which Resources you want to be in Manual TriggerMode.
+- In the Web UI, you can see which Resource are Auto and which are Manual.
+- In the Web UI, You can trigger Manual Resources to update.
 
-## UI Changes
-* Pressing 'u' will start an update of the selected resource (including Tiltfile). (If there is a current update running, it will put it the selected resource at the front of the queue).
-* Pressing shift+'u' will do the same, unless the selected resource is using Live Update, in which case it will do an image update, not a live update.
-* Pressing spacebar will toggle Pause. While Pause is on, Tilt will not queue builds automatically. At the moment the user turns off Pause, all resources with pending file edits will be enqueued.
-* The "Build" column will be renamed to "Update".
-* The Update column for a Resource will show:
-  * If it's dirty. E.g., "*" if it's dirty. But also some indication that updates on each new update.. (e.g. two symbols and it switches between the two each time you save). This way the user knows Tilt is seeing the edits.
-  * Info about some update, in priority order:
-    * Current update: "Updating (1.5s)"
-    * Pending Update:
-      * If global pause: "Paused"
-      * If in queue: "Queue: N" (where N is the position in the queue)
-      * If manual: "Manual"
-    *Previous Update
 
-## Questions left to implementation
-These are questions that we consider now, but don't think we can answer well and will leave to implementation.
+## Non-Goals
 
-### Call to Action for Paused/Manual resources
-Paused and Manual resources with pending changes would be more helpful if the UI included a hint on how to run them. How can we fit this in a way that fits in the available space, and that's more useful than distracting?
+### Update All Resources
+A button to update all Manual TriggerMode Resources at once. Might be convenient for use cases with lots of Resources set as Manual. We should only do it if we get feedback that users want to simultaneously update several manual resources at once.
 
-## Alternatives Considered
+### Abort ongoing updates
+This would require more engine changes. We should only do it if we have evidence that users have builds that they want to abort.
 
-### Only allow one global update mode
-This is reasonable, and should be the first part we cut if this takes longer than expected.
+### Configure TriggerMode via Web UI
+Right now, you can only configure TriggerMode via the Tiltfile. Changing these settings via the Web UI could appeal to those who like GUIs rather than long config files. But it’s high cost for uncertain impact, since it’s the first instance of altering the Tiltfile without directly editing it.
 
-### Stop in-progress updates
-This is more work, and it's not clear if it adds much value. We can do it later.
+![Manual Update Control Config](/manual_update_control_config.png)
 
-### Allow pausing a single resource in the UI
-We could allow pause to apply to one resource, not all of them. This would require more care to design, and it's not clear if it's that much better than pausing all builds, so let's not do it until we have signal it's important.
 
-Also, if a user wants that frequently, they may want to change it in the Tiltfile. Or it's a case we don't understand yet.
+### Onboarding
+For now, the main way for users to discover this feature is through our Blog Post, Docs, or speaking with Tilters. If we want this feature to be more discoverable for all Tilt users, we can improve onboarding so first-time users see a message like, “Tilt automatically updates your Resources when you make changes in your filesystem. But you can set Resources to Manual to have more control.”
+
+We should do this as part of a larger Onboarding epic, so we can properly prioritize the features we want to surface for first-time users.
+
+![Manual Update Control Onboarding](/manual_update_control_onboarding.png)
+
+## Future Goals
+
+### Force Update Single Resource / All Resources
+Sometimes Resources can get into a weird state, and users might want to re-trigger updates to try and fix the issue. 
+
+We can also offer the option of whether the user wants to trigger a Full Update or a LiveUpdate.
+
+### Pause/Unpause 
+A button to temporarily make everything Manual, which won’t persist past a web session. Tilt still “remembers” which items are persistently Manual, as configured in Tiltfile.
+
+When you Unpause, Tilt updates everything that’s “dirty”.
+
+Use case: keep Tilt from freaking out when you do a Git checkout.
+
+### Keyboard Control
+Engineering culture tends to demand full keyboard control for tasks that are repetitive, and otherwise require a lot of sniping and clicking with a mouse.
+
+### Show Errors for Failed Updates
+Right now, if we get non-OK responses from triggering a Manual Update, we log it to console. Users will be able to understand that an error happened if we change the UI. 
+
+
+## Detailed Design
+
+In Tiltfile, you can change the Trigger Mode of individual Resources to Manual. (Default is Auto.)
+
+A Resource with changes that can be built/updated/deployed is not in sync with your filesystem, and has an indicator to show it’s “dirty”.
+
+Any Resource in Manual TriggerMode has a button to trigger updates. For now, you can only trigger updates when a Resource is “dirty”. Otherwise the button is still visible, but disabled.
+
+![Manual Update Control GIF](/manual_update_control.gif)
+
