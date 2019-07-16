@@ -27,7 +27,7 @@ The new function `update_mode()` sets the default update mode for resources. It 
 * Pressing 'u' will start an update of the selected resource (including Tiltfile). (If there is a current update running, it will put it the selected resource at the front of the queue).
 * Pressing shift+'u' will do the same, unless the selected resource is using Live Update, in which case it will do an image update, not a live update.
 * Pressing 'y' will start an update of all dirty resources.
-* Pressing spacebar will toggle Pause. While Pause is on, Tilt will not queue builds automatically (including Tiltfile). At the moment the user turns off Pause, all resources with update_mode auto that have pending file edits will be enqueued.
+* Pressing spacebar will toggle Pause. While Pause is on, Tilt will not queue builds automatically (including Tiltfile), but it will still track file changes. At the moment the user turns off Pause, all resources with update_mode auto that have pending file edits will be enqueued.
 * The "Build" column will be renamed to "Update".
 * The Update column for a Resource will show:
   * If it's dirty. E.g., "*" if it's dirty. But also some indication that updates on each new update.. (e.g. two symbols and it switches between the two each time you save). This way the user knows Tilt is seeing the edits.
