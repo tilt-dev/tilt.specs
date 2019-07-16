@@ -19,7 +19,7 @@ it and have it restart).
 
 To accomplish this, we need these things:
 
-1. Implement a wrapper script that handles restarting the process.
+1. Implement a wrapper script that handles restarting the process (already implemented [here](https://github.com/windmilleng/rerun-process-wrapper)).
 2. Have Tilt put that wrapper script in any `live_update`-enabled images it
    builds.
 3. Have Tilt change the entrypoint for any `live_update`-enabled images to call
@@ -36,7 +36,7 @@ the old value is hard.
 Obvious options:
 1. Calculate the entry point.
 2. Run the image and observe the entry point.
-3. Require the user to tell us the entry point.
+3. Require the user to tell us the entry point, e.g., instead of `container_restart()`, `container_restart('/go/bin/my_app')`
 
 #### Calculate the entry point
 
@@ -104,13 +104,18 @@ user tell us what entrypoint to use?
 
 #### Can we just, like, not?
 1. Deprecate the `container_restart` directive
-2. Implement entry point overriding at the image level
-3. Document how to use `live_update` with non-hot-reloading runtimes by using
-   a wrapper script and adding a trigger to kick off the wrapper's restart
-   functionality.
+2. Implement entry point overriding at the image level (already done).
+3. Document how to use `live_update` with non-hot-reloading runtimes. This makes
+   the UI:
+   1. Commit the restart wrapper script to your repo.
+   2. Add the wrapper script to your docker image (or we need to add a
+      feature to allow users to specify extra image files in their Tiltfile).
+   3. Override the image's entrypoint in the Tiltfile to use the wrapper script.
+   4. Add a `run` to your `live_update` that triggers on restart.txt.
 
 This is a really nasty UI for a feature in which we've previously invested a lot
-of time to make as intuitive as possible.
+of time to make as easy to onboard as possible. It also causes a user to worry
+about having different Dockerfiles for dev and prod.
 
 ### Recommendation
 
