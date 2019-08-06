@@ -32,12 +32,19 @@ Cons:
 
 #### Require remote k8s clusters to be explicitly whitelisted
 
-Add an `allowed_remote_k8s_clusters` Tiltfile directive. Generate a Tiltfile error unless either:
+Add an `allow_k8s_contexts` Tiltfile directive. Generate a Tiltfile error unless one of:
 1. the k8s context api's host is localhost
-2. the k8s context's name is passed to `allowed_remote_k8s_clusters`
+2. the k8s context's name is in a whitelist of known-local context names
+3. the k8s context's name is passed to `allow_k8s_contexts`
 
 Pros:
 * pretty simple UI
 
 Cons:
 * gets kind of weird in the staging case - sometimes I want Tilt to be able to deploy there, and sometimes I don't. I'd have to edit the Tiltfile every time. This might be unavoidable.
+
+### Proposal
+
+Implement the last option (`allowed_remote_k8s_clusters`). Primarily because:
+1. The UI for the second option is unclear.
+2. I'd personally like protection from accidentally deploying servantes / integration tests to GKE.
