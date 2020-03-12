@@ -67,15 +67,29 @@ Link to snapshot of the server running
 
 Before we try to make this faster, let's measure it.
 
-Add a local_resource that records the current time, and kicks off a build.
+Tilt can run commands locally [explain why].
 
-Add code to the app that records start up time.
+We'll use local_resource, which lets you locally run scripts, shell code, or servers.
+
+We want to measure the time from code change to new process.
+
+First, a local_resource that records the current time to a source file.
+
+Second, app code that reads that start time and calculates time elapsed. Display
+it in logs and served HTML.
 
 Let's see it!
 
+Screenshot
+
 Current score of our naive hello world app.
 
-### Attempt #1
+Note that time displayed in the Tilt sidebar is different than the time our app
+logged. That's OK! Many benchmarks we care about -- time to build, time to
+schedule, time until ready to serve traffic. Tilt gives you defaults, 
+and tools to take your own benchmarks.
+
+### Attempt #1 (if necessary)
 
 Leave Tilt running.
 
@@ -92,12 +106,6 @@ Introduce sync()
 Maybe introduce run()
 
 Current Score
-
-### Attempt #3
-
-Add local_resource + live_update binary
-
-Current score
 
 ### Our Recommendation
 
