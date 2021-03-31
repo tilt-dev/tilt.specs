@@ -13,6 +13,8 @@ As it stands today, this is a singleton for a Tilt process but is also modeled t
 ## Spec
 The spec is actually not particularly interesting at the moment - most of the complexity lies in the status.
 
+Future considerations for inclusion here would be any other useful configuration around the engine itself, particularly if useful to help debug why things seem "stuck", e.g. max parallelism.
+
 ```go
 type TiltRunSpec struct {
 	// TiltfilePath is the path to the Tiltfile for the run. It cannot be empty.
@@ -62,7 +64,7 @@ type TiltRunStatus struct {
 ### Target
 Target is unfortunately a bit of an overloaded word, but it does map very close to what the Tilt engine refers to as targets internally, so it hopefully doesn't introduce a lot of confusion.
 
-A `Tiltfile` resource can produce one or more targets. For example, a `local_resource` with no `update_cmd` but a `serve_cmd` would produce a single target, while a K8s resource could have a "deploy" target (`kubectl apply ...`) and "runtime" target (the actual pod execution).
+A `Tiltfile` resource can produce one or more targets. For example, a `local_resource` with no `update_cmd` but a `serve_cmd` would produce a single target, while a K8s resource could have a "build" target (`kubectl apply ...`) and "runtime" target (the actual pod execution).
 
 Additionally, just like within the engine, a target can be associated with one or more resources. The most common (and only as today?) use case for this is a `docker_build` image that's referenced by multiple K8s pods: internally, the Tilt engine maintains a single target to avoid redundant image builds.
 
@@ -70,7 +72,9 @@ Currently, the engine internals try to aggregate multiple internal targets to _e
 
 The forced two states (build + runtime) is also problematic because not all resources truly have both and so we often force those semantics. For example, the `Tiltfile` itself only "builds" but doesn't have a concept of runtime. The aforementioned `local_resource` can also cover all combinations: `update_cmd` but no `serve_cmd` is similar to `Tiltfile` (build-only), but you can also have a `serve_cmd` with NO `update_cmd`, which is runtime-only. It can also have both, of course.
 
-Lastly, while "runtime" is generally considered to be something server-like that runs indefintiely, K8s jobs are a notable exception to this rule and so require special-cased logic.
+Often the use of the world "build" itself is a misnomer or confusing, such as during a K8s deploy (`kubectl apply`), which isn't what most users would traditionally consider a build.
+
+Lastly, while "runtime" is generally considered to be something server-like that runs indefinitely, K8s jobs are a notable exception to this rule and so require special-cased logic.
 
 As a result, the API concept of "target" is intended to provide a minimal, normalized representation that is adequate for both use cases.
 
@@ -113,16 +117,14 @@ const (
 #### TargetState
 The state of the target is modeled after numerous K8s APIs as well as the new apiserver-based `Cmd` model within Tilt.
 
-A notable addition is the `Disabled` flag; currently, this is important to handle `auto_init=False` today, and should also accommodate the imminent addition of post-launch resource start/stop toggles.
+There are 3 possible states: `Waiting`, `Active`, and `Terminated`; the relevant one is populated with  details for the eponymous state and the others are nil. If all of them are nil, the target is currently inactive. For example, a resource with `auto_init=False` set will not have any populated states until the user triggers the resource (and thus its respective targets) to start.
 
 ```go
 // TargetState describes the current execution status for a target.
+//
+// Either EXACTLY one of Waiting, Active, or Terminated will be populated or NONE of them will be.
+// In the event that all states are null, the target is currently inactive or disabled and should not be expected to execute.
 type TargetState struct {
-	// Disabled indicates that the target has been requested to not execute.
-	//
-	// Currently, this only applies at startup to targets whose resource has had `auto_init=False` set
-	// in the Tiltfile AND who have not been subsequently triggered via user action.
-	Disabled   bool                   `json:"disabled"`
 	// Waiting being non-nil indicates that the next execution of the target has been queued but not yet started.
 	Waiting    *TargetStateWaiting    `json:"pending,omitempty"`
 	// Active being non-nil indicates that the target is currently executing.
@@ -133,27 +135,24 @@ type TargetState struct {
 ```
 
 ##### TargetStateWaiting
-
-**❓ OPEN QUESTIONS**
-* Is there any reason a target is _waiting_ to execute other than dependencies? If so, do we need `Reason`?
-  * In K8s, `Reason` has things like `ImagePullBackOff` or `CrashLoopBackOff`
-
 ```go
 // TargetStateWaiting is a target that has been enqueued for execution but has not yet started.
 type TargetStateWaiting struct {
-	// TriggerTime is when the earliest event occurred (e.g. file change) occurred that resulted in the target being
-	// enqueued.
-	TriggerTime metav1.MicroTime `json:"triggerTime"`
-	// Reason is a description for why the target is waiting and not yet active.
-	Reason string `json:"reason"`
+    // StartTime is the time at which the target entered the waiting state.
+    StartTime time.Time `json:"startTime"`
+    // Reason is a brief description of why the target has not yet started execution.
+    Reason string `json:"reason"`
 }
 ```
 
+**`Reason` (FUTURE)**
+The most useful thing we can expose here is _why_ the target is waiting - that is, why it has not yet started execution (e.g. waiting for a dependency, parallelism limits).
+
+This might not be possible to determine consistently currently, so there might be cases with a generic/unknown reason in the interim.
+
+This is also not _critical_ to initial use cases (although potentially useful for debugging a hung `tilt ci` run), so we might omit it for the moment.
+
 ##### TargetStateActive
-
-**❓ OPEN QUESTIONS**
-* Corrollary to removing `Reason` in waiting, should there actually BE a `TriggerReason` here? This could be things like "file changed" or "user restart", but it's often useful to know _why_ something is running
-
 ```go
 // TargetStateActive is a target that is currently running but has not yet finished.
 type TargetStateActive struct {
@@ -161,6 +160,12 @@ type TargetStateActive struct {
 	StartTime metav1.MicroTime `json:"startTime"`
 }
 ```
+
+**`TriggerReason` (FUTURE)**
+* What caused this to run (e.g. watched file change)?
+  * We don't currently propagate this info through the pipeline fully enough to consistently/accurately have it at the point we need it; it's also not critical to initial use cases
+  * It also might make sense for specific API types to provide this instead so they can include even more details (e.g. the actual list of files that changed)
+
 
 ##### TargetStateTerminated
 ```go
