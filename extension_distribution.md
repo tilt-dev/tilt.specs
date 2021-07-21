@@ -165,7 +165,7 @@ type ExtensionStatus struct {
   // Contains information about any problems loading the extension.
   Error string
 
-  // The last time the repo was fetched and checked for validity.
+  // The last time the extension was fetched and checked for validity.
   LastFetched metav1.Time
   
   // The path to the extension on disk. This location should be shared
@@ -293,4 +293,3 @@ different ways labels and extensions play well together:
   to have resources communicate with custom controllers).
   
 But I've punted on the specifics of how this should work.
-
