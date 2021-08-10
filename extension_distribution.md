@@ -25,12 +25,27 @@ then dynamically adds a button to kill them.
 
 ## Secondary Goal
 
+### Extension Ecosystem
+
 Set us up for a more robust ecosystem of extensions that are easier to:
 
 - discover
 - prototype
 - install
 - distribute
+
+### API Consistency
+
+
+We see the future of Tilt extensibility as the API Server and Kubernetes
+operator pattern.
+
+What that means: there's an HTTP server that allows you can read, watch, and
+write data models. Long-term, to add a new feature to Tilt, you will add a new
+resource/controller pair.
+
+Users should be able to add extensions from the Tiltfile or from the CLI with a
+similar API.
 
 ## Non-Goals
 
@@ -46,15 +61,10 @@ analogue for ArtifactHub or CharmHub.
 
 ### Tiltfile 
 
-We see the future of Tilt extensibility as the API Server and Kubernetes
-operator pattern.
+Per above, we want the Tiltfile API to converge towards Kubernetes API conventions.
 
-What that means: there's an HTTP server that allows you can read, watch, and
-write data models. Long-term, to add a new feature to Tilt, you will add a new
-resource/controller pair.
-
-The Tiltfile is a client of the API Server. We do NOT think that adding more
-hooks and extension points to the Tiltfile execution model is the right answer.
+We do NOT think that adding special hooks and extension points to the Tiltfile
+execution model is the right answer.  We don't want special Tiltfile data flow or overrides.
 
 ## Prior Art
 
@@ -108,12 +118,15 @@ executables that you can run.
 We'll add three new data types to the APIServer:
 
 - `ExtensionRepo`: A repository of Tilt extensions.
-- `Extension`: A globally installed extension.
+- `Extension`: An installed extension.
 - `Tiltfile`: A Tiltfile invocation.
 
-Most data types in the Tilt APIServer are stored in-memory only, and disappear
-when Tilt is killed. The `ExtensionRepo` and `Extension` types are
-different. They're persisted on-disk across Tilt sessions under ~/.tilt-dev.
+Each of these are stored in-memory only, and disappear when Tilt is killed.
+
+But ExtensionRepo and Extension correspond to checked-out extensions on disk,
+which are deliberately not cleaned up when Tilt exits.
+
+We'll illustrate how this works with examples.
 
 ### ExtensionRepo
 
@@ -125,6 +138,10 @@ type ExtensionRepoSpec struct {
   // https: URLs that point to a public git repo
   // file: URLs that point to a location on disk.
   URL string
+  
+  // A reference to sync the repo to. If empty, Tilt will always update
+  // the repo to the latest version.
+  Ref string
 }
 ```
 
@@ -134,29 +151,31 @@ type ExtensionRepoStatus struct {
   Error string
 
   // The last time the repo was fetched and checked for validity.
+  // This corresponds to the ModTime of the repo on-disk.
   LastFetched metav1.Time
 }
 ```
 
+Once an ExtensionRepo is registered with the API server, Tilt will fetch that repo
+under ~/.tilt-dev, even if no extensions fetch that repo.
+
 ### Extension
 
-The name of an extension MUST have the form `{ExtensionRepo.Name}/{path}` where
-the first part of the name points to an existing `ExtensionRepo`.
+Each `Extension` will manage a child object, a `Tiltfile`, which manages the
+extension execution for a particular Tilt session. The Tiltfile and Extension
+object should have the same name.
 
-If an `ExtensionRepo` is deleted, all the `Extension` objects with the same prefix
-are also deleted.
-
-Each `Extension` will manage a child object, a `Tiltfile`, which manages
-the extension execution for a particular Tilt session.
+The name of the extension is displayed in the Tilt UI as a new Tiltfile-like
+resource.
 
 
 ```go
 type ExtensionSpec struct {
-  // No fields. We expect the complete specification of the extension
-  // to be expressed in the ObjectMeta (Name, Owner).
+  // RepoName specifies the ExtensionRepo object where we should find this extension.
+  RepoName string
   
-  // In the future, extensions might have specifications like content scripts,
-  // where they only apply to certain projects.
+  // RepoPath specifies the path to the extension directory inside the repo.
+  RepoPath string
 }
 ```
 
@@ -164,9 +183,6 @@ type ExtensionSpec struct {
 type ExtensionStatus struct {
   // Contains information about any problems loading the extension.
   Error string
-
-  // The last time the extension was fetched and checked for validity.
-  LastFetched metav1.Time
   
   // The path to the extension on disk. This location should be shared
   // and readable by all Tilt instances.
@@ -225,6 +241,21 @@ type TiltfileStateTerminated {
 }
 ```
 
+### Tiltfile API
+
+To start, users will install extensions from the main Tiltfile. The syntax will look like this:
+
+```
+extension_repo(name='default', url='https://github.com/tilt-dev/tilt-extensions')
+extension(name='cancel_button', repo_name='default', repo_path='cancel_button')
+```
+
+We have deliberately designed this API so that it can be auto-generated from the above models.
+
+These functions simply register the API objects with the API
+Server. Reconcilation (read: downloading the extension and executing its code)
+happens asynchonously.
+
 ## Future Work
 
 ### CLI Support
@@ -242,17 +273,9 @@ tilt create repo my-team https://github.com/my-team/tilt-extensions
 tilt create ext my-team/image-builder
 ```
 
-The big problem with this approach is that they need a server to talk to, and
-won't work properly if you're not currently running Tilt.
-
-In the short-term, we can insist that you have Tilt running to add repos/exts.
-
-In the medium-term, it might make sense to use the approach in `tilt alpha updog`
-to start up a short-lived server, apply resources to it, then save them.
-
 ### Namespacing
 
-Global extensions and Tiltfiles can be loaded independently and in parallel.
+Extensions and Tiltfiles can be loaded independently and in parallel.
 
 But they register resources with the same APIServer.
 
@@ -271,7 +294,7 @@ Long-term, I expect we'll have services that manage other services, including:
 - A button manager
 - An extension manager
 
-which can all, themselves, be global extensions implemented on this system, and
+which can all, themselves, be extensions implemented on this system, and
 can introspect on the list of extensions.
 
 ### Resource Grouping
@@ -293,3 +316,31 @@ different ways labels and extensions play well together:
   to have resources communicate with custom controllers).
   
 But I've punted on the specifics of how this should work.
+
+### Concurrency
+
+Extension repos are installed under `~/.tilt-dev`.
+
+If you have two tilt instances running at the same time, there's a possibility
+they will step on each other's state.
+
+If one tilt instance updates the repo, the other tilt instance will not get notified.
+
+I think this is a real problem, but not worth worrying about for the initial
+implementation.
+
+### Vendoring
+
+Extensions and Extension repos are stored in the users' home directory.
+
+They are not copied into the project directory.
+
+In the future, I think it would make sense to add a `Vendor` boolean field to either
+ExtensionRepo or Extension. If `Vendor` is set, the reconciler would checkout the
+code into the project directory instead of the global directory.
+
+We would need some way to unify this with the existing `tilt_modules` directory
+(for `load('ext://...')`). But I don't think it makes sense to unify them at
+this stage.  The extension API model is still evolving.
+
+
