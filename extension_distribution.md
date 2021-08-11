@@ -319,7 +319,7 @@ But I've punted on the specifics of how this should work.
 
 ### Concurrency
 
-Extension repos are installed under `~/.tilt-dev`.
+Extension repos are installed under `$XDG_DATA_HOME/tilt-dev` (default to `~/.local/share/tilt-dev`).
 
 If you have two tilt instances running at the same time, there's a possibility
 they will step on each other's state.
@@ -342,5 +342,4 @@ code into the project directory instead of the global directory.
 We would need some way to unify this with the existing `tilt_modules` directory
 (for `load('ext://...')`). But I don't think it makes sense to unify them at
 this stage.  The extension API model is still evolving.
-
 
