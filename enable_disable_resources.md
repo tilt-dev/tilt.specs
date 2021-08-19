@@ -38,7 +38,9 @@ write data models. Long-term, to add a new feature to Tilt, you will add a new
 resource/controller pair.
 
 Users should be able to disable services from either the CLI or the
-Tiltfile. Implementers should not need to implement custom API endpoints.
+Tiltfile. Implementers should not need to implement custom API endpoints.  Users
+should be able to be able to write IDE plugins that enable/disable services as
+well.
 
 Future resource types should be able to support whatever enable/disable model is
 described here.
@@ -78,6 +80,14 @@ They're mainly intended to be illustative.
 
 For this doc, we're more interested in broad categories of solutions rather than
 exact field names. We expect to revise field names as we implement the feature.
+
+### Legacy EngineState Objects
+
+In this doc, we don't talk too much about how enable/disable will work for
+objects that are still part of the EngineState (rather than the apiserver).
+
+We want to keep the discussion focused on what's best for API Server, and are
+confident we could replicate whatever object we use back to EngineState.
 
 ## Possible Approaches
 
@@ -145,7 +155,8 @@ decide if that counts as one toggle or two toggles.
 
 NB: This might be a good thing! For resources where it takes a long time to
 start or stop a service, you probably WANT the controller to make smart
-decisions about "queued up" toggles.
+decisions about "queued up" toggles. But this may introduce issues where
+different controllers make different decisions about how the trigger is applied.
 
 A slight variant on this idea: `DisableStatus` doesn't explicitly model whether
 the resource is disabled. Instead, we just see the resource has been terminated
@@ -155,10 +166,9 @@ CmdStateTerminated and CmdStatePending fields.)
 
 ### DisableSource
 
-If an API object can be disabled, then that API object should have three new
-fields: `Disabled`, `DisableSource`, and `DisableStatus`. `Disabled` and
-`DisableSource` points at the source of truth data model for whether the
-resource is disabled.
+If an API object can be disabled, then that API object should have two new
+fields: `DisableSource` and `DisableStatus`. `DisableSource` points at the
+source of truth data model for whether the resource is disabled.
 
 Here's what that might look like:
 
@@ -166,7 +176,6 @@ Here's what that might look like:
 type KubernetesApplySpec struct {
   ...
   
-  Disabled *bool
   DisableSource *DisableSource
 }
 
@@ -176,7 +185,9 @@ type KubernetesApplyStatus struct {
   DisableStatus *DisableStatus
 }
 
-type DisableSource struct {
+type DisableFrom struct {
+  Value *bool
+
   ConfigMap *ConfigMapDisableSource
 }
 
@@ -206,19 +217,21 @@ you can specify the environment variables for a container with `Env` and `EnvFro
 
 https://pkg.go.dev/k8s.io/api/core/v1#Container
 
-You could imagine starting out by just implementing one of the fields
-(either `Disabled` or `DisableSource` would be fine).
-
 For the initial implementation, I would have the Tiltfile create ConfigMaps for
 each UIResource, and wire up the each object's DisableSource to the correct
 ConfigMap.
 
-The downside of this approach is that, if you want the UI to be able to disable a resource,
-what API does it call and how does it know how to call it? Does it follow DisableSource
-to the ConfigMap, then update the ConfigMap? Or does it support a few common conventions?
+The downside of this approach is that, if you want the UI to be able to disable
+a resource, it has to know about all the possible DisableSources and how to
+follow them.
 
 I could imagine a lot of complexity on the UI side to figure out which property
 to update for each type of object.
+
+The upside of this approach is that it gives us a lot of flexibility to have
+more complex decision trees for when to disable a resource. For example, a
+common pattern is to have 3 sets of services: disabled, to-run, and to-edit.  A
+to-run service has the ImageBuild disabled but the KubernetesApply enabled.
 
 ### Resource Selector
 
@@ -331,18 +344,12 @@ We simply don't have objects that pre-empt other objects' controllers.
 
 I think any of the above proposals could work. 
 
-I like the DisableOn trigger the most.
+I like the DisableSource field the most. I think it strikes the right balance
+between a single source of truth, flexibility, and having "self-contained" objects
+that can be used independently.
 
-If you model "Disabled" as explicit state, people are going to want different
-ways to override that state (e.g., if you can set the Disabled state from two
-different ConfigMaps, which one wins?). You start needing booleans in YAML to
-express how those state variables combine. And they're going to have different
-opinions about how long that state persists (e.g., if I reload the Tiltfile,
-does that reset the disabled state in the YAML?).
-
-If the primary operation is not "is it disabled?" but rather "how do I toggle
-whether it's disabled?", that dodges those problems. It's probably a better
-thing for our API to focus on.
+To start, Tiltfile execution would always set DisableSource to a ConfigMap, and
+we would make sure the state of that ConfigMap persists across Tiltfile reloads.
 
 ## Miscellaneous Questions
 
