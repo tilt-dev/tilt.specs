@@ -46,8 +46,8 @@ waiting on trigger, pending on dependency, running, completed, or error.
 
 ### Disabled
 
-We say a server is "disabled" if it's visible in the Tilt UI and is in status
-"disabled". We do not expect any new logs or status changes in the UI until the
+We say a server is "disabled" if it's described by the Tilt API and its status
+"disabled". We do not expect any new logs or status changes until the
 service is intentionally "enabled"
 
 ### Session
