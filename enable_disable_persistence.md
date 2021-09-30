@@ -96,9 +96,9 @@ models "start on boot" and "start now" as independent actions.
 ### Run all, Disable from UI
 
 1. Write a Tiltfile with services Paulie and Roberta
-2. Run `tilt up` -> Paulie and Roberta are enabled.
-4. Click "disable" on "Paulie" -> Roberta is enabled, Paulie is disabled
-5. Ctrl-c and re-run `tilt up` -> Roberta is enabled, Paulie is disabled
+1. Run `tilt up` -> Paulie and Roberta are enabled.
+1. Click "disable" on "Paulie" -> Roberta is enabled, Paulie is disabled
+1. Ctrl-c and re-run `tilt up` -> Roberta is enabled, Paulie is disabled
 
 Possible Principle:
 
@@ -108,9 +108,9 @@ from the previous Tilt session.
 ### Specify services, Disable from UI
 
 1. Write a Tiltfile with services Paulie and Roberta and Joe
-2. Run `tilt up paulie roberta` -> Paulie and Roberta are enabled, Joe is disabled.
-4. Click "disable" on "Paulie" -> Roberta is enabled, Joe and Paulie are disabled.
-5. Ctrl-c and re-run `tilt up paulie roberta` -> Paulie and Roberta are enabled, Joe is disabled.
+1. Run `tilt up paulie roberta` -> Paulie and Roberta are enabled, Joe is disabled.
+1. Click "disable" on "Paulie" -> Roberta is enabled, Joe and Paulie are disabled.
+1. Ctrl-c and re-run `tilt up paulie roberta` -> Paulie and Roberta are enabled, Joe is disabled.
 
 Possible Principle:
 
@@ -119,9 +119,9 @@ Tilt always respects arguments to `tilt up` when it starts.
 ### Specify services, Enable from UI
 
 1. Write a Tiltfile with services Paulie and Roberta and Joe
-2. Run `tilt up paulie roberta` -> Paulie and Roberta are enabled, Joe is disabled.
-4. Click "enable" on "Joe" -> Paulie and Roberta and Joe are enabled.
-5. Ctrl-c and re-run `tilt up paulie roberta` -> Paulie and Roberta are enabled, Joe is disabled. 
+1. Run `tilt up paulie roberta` -> Paulie and Roberta are enabled, Joe is disabled.
+1. Click "enable" on "Joe" -> Paulie and Roberta and Joe are enabled.
+1. Ctrl-c and re-run `tilt up paulie roberta` -> Paulie and Roberta are enabled, Joe is disabled. 
 
 Possible Principle:
 
@@ -132,9 +132,9 @@ Your UI change has been wiped out by the `tilt up` args.
 ### Run all, Disable from UI, Change Args
 
 1. Write a Tiltfile with services Paulie and Roberta
-2. Run `tilt up` -> Paulie and Roberta are enabled.
-4. Click "disable" on "Paulie" -> Roberta is enabled, Paulie is disabled.
-5. Run `tilt args paulie roberta` in a separate terminal. -> Tiltfile re-executes, Paulie and Roberta are enabled. 
+1. Run `tilt up` -> Paulie and Roberta are enabled.
+1. Click "disable" on "Paulie" -> Roberta is enabled, Paulie is disabled.
+1. Run `tilt args paulie roberta` in a separate terminal. -> Tiltfile re-executes, Paulie and Roberta are enabled. 
 
 Possible Principle:
 
@@ -143,15 +143,30 @@ Changing the tilt args wipes out any enabled/disabled services from the UI.
 ### Run one service, Enable from UI, Change Args
 
 1. Write a Tiltfile with services Paulie and Roberta
-2. Run `tilt up paulie` -> Paulie is enabled, Roberta is disabled.
-4. Click "enable" on "Roberta" -> Paulie and Roberts is enabled.
-5. Run `tilt args paulie` in a separate terminal. -> Tiltfile re-executes, Paulie and Roberta stay enabled.
-6. Run `tilt args roberta` in a separate terminal. -> Tiltfile re-executes, Roberta is enabled, Paulie is disabled.
+1. Run `tilt up paulie` -> Paulie is enabled, Roberta is disabled.
+1. Click "enable" on "Roberta" -> Paulie and Roberta is enabled.
+1. Run `tilt args paulie` in a separate terminal. -> Tiltfile re-executes, Paulie and Roberta stay enabled.
+1. Run `tilt args roberta` in a separate terminal. -> Tiltfile re-executes, Roberta is enabled, Paulie is disabled.
 
 Possible Principle:
 
-Changing the tilt args wipes out any enabled/disabled services from the UI. But
-keeping the tilt args the same does nothing.
+This is probably the most controversial - that calling 'tilt args project1` twice should
+persist the enabled/disabled state (because the args havne't changed).
+
+### set_enabled_resources() override
+
+1. Write a Tiltfile with services Paulie, Roberta, and Joe. The Tiltfile calls `set_enabled_resources(['paulie', 'roberta'])` on ALL inputs.
+1. Run `tilt up paulie` -> Paulie and Roberta are enabled, Joe is disabled.
+1. Click "disable" on "Paulie" -> Roberta is enabled. Paulie and Joe are disabled.
+1. Run ctrl-c, `tilt up paulie` -> Tilt restores previous state: Roberta is enabled. Paulie and Joe are disabled.
+1. Run ctrl-c, `tilt up joe` -> Tiltfile re-executes: Paulie and Roberta are enabled, Joe is disabled.
+
+Possible Principle:
+
+This is deliberatly an edge-case tickling case, but demonstrates the ways
+that `set_enabled_resources` can ignore what's passed on `tilt up`.
+
+Changing the `tilt up` args wipes out previous state.
 
 ## Possible Implementation
 
