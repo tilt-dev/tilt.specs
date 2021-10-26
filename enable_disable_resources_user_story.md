@@ -126,3 +126,26 @@ They should take up less visual space in the default view. It's OK if they're ha
 We should not invest a lot of time right now in how to display logs or display
 historical status of disabled resources. It may NEVER make sense to show this
 data.
+
+### tilt args
+
+Currently, Tilt users use `tilt up x y` to only run resources `x` and `y`.
+
+An important requirement of this feature is that users should be able to control
+the running resources from either the UI or the CLI.
+
+Therefore, adding enable/disable resources should change the default behavior of `tilt up x y`.
+
+Here's how this works today:
+
+- We write a `TiltfileSpec` to the API server with `args: ["x", "y"]`.
+
+- The Tiltfile reconciler executes the Tiltfile
+
+- At the end, we filter out any Manifests that aren't included in the arg
+  list. [code](https://github.com/tilt-dev/tilt/blob/fe386b5cc967383972bf73f8cbe6514c604100f8/internal/tiltfile/config/resources.go#L48)
+
+Once the enable/disable resources control is in-place, the above will change so
+that instead of filtering out Manifests, Tilt will create all manifests, but
+disable the ones that aren't in the arg list.
+
