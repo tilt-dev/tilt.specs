@@ -115,8 +115,11 @@ Tree-sitter also has highlighting functionality that can be used to provide sema
 
 ### Conclusion
 We should write our LSP in Go.
-The LSP Go packages, while under-documented, are feature complete and real world tested via `gopls`.
-There are no viable (fault-tolerant or otherwise) Starlark parsers written in another language.
+
+On the LSP protocol & communication: the LSP Go packages, while under-documented, are feature complete and real world tested via `gopls`.
+(Note: this is specifically in reference to the protocol & JSON-RPC2 communication aspects, not the actual language analysis logic in `gopls`.)
+
+On Starlark analysis: there are no viable Starlark parsers written in another language: both the Go and Java implementations have extremely strict, hand-rolled parsers, and the Rust implementation is now maintained under the `facebookexperimental` org and has some syntax differences.
 The most compelling, modern generic parser/AST library, Tree-sitter, is written in C, and has bindings to many languages, including Go.
 
 We can use the existing Python Tree-sitter grammar to prototype `Tiltfile` LSP functionality (e.g. autocomplete).
